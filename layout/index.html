@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    :root { --notion-bg: #1f1f1f; --notion-border: #2f2f2f; --notion-text: #ffffff; --notion-text-gray: #9b9b9b; --accent-blue: #2383e2; --accent-orange: #e69d42; --accent-mint: #00ffaa; }
+    body { background: var(--notion-bg); color: var(--notion-text); font-family: 'Pretendard', sans-serif; margin: 0; padding: 30px 0; display: flex; flex-direction: column; align-items: center; width: 100%; }
+    .floor-section { width: 100%; max-width: 600px; margin-bottom: 50px; display: flex; flex-direction: column; align-items: center; }
+    .floor-title { font-size: 11px; font-weight: 800; color: var(--notion-text-gray); letter-spacing: 0.2em; text-transform: uppercase; border-left: 3px solid var(--accent-blue); padding-left: 10px; align-self: flex-start; margin-left: 40px; margin-bottom: 20px; }
+    .layout-center-box { display: flex; justify-content: center; gap: 25px; width: 100%; }
+    .room-box { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--notion-border); border-radius: 12px; padding: 18px; position: relative; margin-bottom: 15px; }
+    .room-label { position: absolute; top: -10px; left: 15px; background: var(--notion-bg); padding: 0 8px; font-size: 10px; font-weight: 800; color: #555; }
+    .column-stack { display: flex; flex-direction: column; gap: 8px; }
+    .seat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .seat { width: 62px; height: 46px; background: #2a2a2a; border: 1px solid var(--notion-border); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+    .occupied { border-left: 3px solid var(--accent-blue); }
+    .has-equip { border-left: 3px solid var(--accent-orange); }
+    .seat-name { font-size: 13px; font-weight: 800; }
+    .seat-id { font-size: 9px; font-family: monospace; color: #555; }
+    #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 9999; align-items: center; justify-content: center; }
+    .modal-content { background: #252525; border: 1px solid var(--notion-border); width: 310px; border-radius: 20px; overflow: hidden; }
+    .modal-header { padding: 18px 20px; border-bottom: 1px solid var(--notion-border); display: flex; justify-content: space-between; align-items: center; }
+    .modal-body { padding: 20px; max-height: 400px; overflow-y: auto; }
+    .device-tag { background: #1a1a1a; border: 1px solid var(--notion-border); border-radius: 8px; padding: 10px 12px; font-size: 13px; font-weight: 600; color: #ddd; line-height: 1.4; margin-top: 5px; display: flex; justify-content: space-between; }
+    .qty-highlight { color: var(--accent-mint); font-weight: 800; margin-left: 5px; }
+    .label { font-size: 10px; font-weight: 800; color: var(--accent-blue); text-transform: uppercase; }
+    .spacer { height: 46px; width: 62px; }
+  </style>
+</head>
+<body>
+  <div class="floor-section">
+    <div class="floor-title">11th Floor Layout</div>
+    <div class="layout-center-box">
+      <div class="column-stack" id="f11-left"></div>
+      <div class="column-stack">
+        <div class="room-box"><div class="room-label">OFFICE ROOM 1</div><div class="seat-grid" id="f11-top"></div></div>
+        <div class="room-box"><div class="room-label">OFFICE ROOM 2</div><div class="seat-grid" id="f11-bottom"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="floor-section">
+    <div class="floor-title">10th Floor Layout</div>
+    <div class="layout-center-box">
+      <div class="seat-grid" style="grid-template-columns: repeat(2, 1fr);" id="f10-left"></div>
+      <div class="column-stack" id="f10-right"></div>
+    </div>
+  </div>
+  <div id="modal" onclick="closeModal()"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><div><div id="m-name" style="font-size: 17px; font-weight: 800;"></div><div id="m-id" style="font-size: 11px; color: #555;"></div></div><button onclick="closeModal()" style="background:none; border:none; color:#777; font-size:24px; cursor:pointer;">&times;</button></div><div id="m-body" class="modal-body"></div></div></div>
+  <script>
+    const seatData = {
+      '10F-01': { pc: 'RTX 5090 Windows PC', monitor: 'LG 27" 4K x2' },
+      '10F-02': { pc: 'RTX 5090 Windows PC', monitor: 'LG 27" 4K x2' },
+      '10F-03': { pc: 'RTX 5090 Windows PC', monitor: 'LG 27" 4K x2' },
+      '10F-04': { pc: 'RTX 5090 Windows PC', monitor: 'LG 27" 4K x2' },
+      '10F-05': { pc: 'RTX 5090 Windows PC', monitor: 'LG 27" 4K x2' },
+      '10F-06': { pc: 'RTX 5090 Windows PC', monitor: 'LG 27" 4K x2' },
+      '10F-07': { pc: 'RTX 5090 Windows PC', monitor: 'LG 27" 4K, Dell (구형)' },
+      '10F-08': { name: '정창익', pc: 'RTX 5090 Windows PC', monitor: 'LG 27" 4K x2' },
+      '10F-09': { name: '이형주', pc: 'RTX 5090 Windows PC', monitor: 'LG 27" 4K x2' },
+      '11F-1-02': { name: '이주희', pc: 'Intel MacBook' },
+      '11F-1-03': { name: '정창익', pc: 'RTX 4090 Windows PC, Mac Pro M2 Ultra, MacBook Air M4', monitor: 'Studio Display x2', etc: '외장 SSD x5' },
+      '11F-2-03': { name: '김현진', pc: 'RTX 5090 Windows PC', monitor: 'Studio Display, LG 27" 4K', etc: '외장 SSD, Belkin Dock, 와콤 타블렛' },
+      '11F-2-04': { name: '이지연', pc: 'Mac Studio M4 Max, Intel MacBook', monitor: 'Studio Display, LG 27" 4K x2', etc: '외장 SSD, 와콤 타블렛' },
+      '11F-2-07': { name: '김영현', pc: 'RTX 5090 Windows PC', monitor: 'Studio Display, LG 27" 4K', etc: '외장 SSD, 와콤 타블렛' },
+      '11F-2-08': { name: '박훤', pc: 'RTX 5090 Windows PC, MacBook Pro M4 Pro', monitor: 'Studio Display, LG 27" 4K', etc: 'CalDigit TS5 Dock, 와콤 타블렛' }, // SSD 제거
+      '11F-3-01': { name: '정찬원', pc: 'MacBook Pro M4 Pro', monitor: 'Studio Display, LG 27" 4K', etc: '외장 SSD' },
+      '11F-3-02': { name: '김승우', pc: 'MacBook Pro M4 Pro', monitor: 'Studio Display, LG 27" 4K x2', etc: '외장 SSD, 디스플레이링크' },
+      '11F-3-03': { name: '정선아', pc: 'Mac Studio M4 Max', monitor: 'Studio Display, LG 27" 4K x2', etc: '외장 SSD, 디스플레이링크' },
+      '11F-3-04': { name: '탁은경', pc: 'Mac Studio M4 Max', monitor: 'Studio Display, LG 27" 4K' },
+      '11F-3-07': { name: '이형주', monitor: 'Studio Display, LG 27" 4K' },
+      '11F-3-09': { name: '홍지훈', pc: 'Mac Studio M4 Max', monitor: 'LG 27" 4K x2' }
+    };
+    function showModal(id) {
+      const d = seatData[id];
+      document.getElementById('m-name').innerText = d?.name || '공석';
+      document.getElementById('m-id').innerText = id;
+      const b = document.getElementById('m-body');
+      if (!d) b.innerHTML = '정보 없음';
+      else {
+        const s = [{l:'PC / Laptop', k:'pc'}, {l:'Monitor', k:'monitor'}, {l:'기타 자산', k:'etc'}];
+        b.innerHTML = s.map(x => d[x.k] ? `<div style="margin-bottom:12px"><span class="label">${x.l}</span>${d[x.k].split(',').map(v => {
+          let val = v.trim();
+          if(val.includes('x')) val = val.replace(/(x\d+)/g, '<span class="qty-highlight">$1</span>');
+          return `<div class="device-tag">${val}</div>`;
+        }).join('')}</div>` : '').join('');
+      }
+      document.getElementById('modal').style.display = 'flex';
+    }
+    function closeModal() { document.getElementById('modal').style.display = 'none'; }
+    function createSeat(id) {
+      if(!id) return Object.assign(document.createElement('div'), {className:'spacer'});
+      const d = seatData[id]; const div = document.createElement('div');
+      div.className = `seat ${d?.name ? 'occupied' : (d?.pc || d?.monitor ? 'has-equip' : 'empty')}`;
+      div.onclick = () => showModal(id);
+      div.innerHTML = `<div class="seat-name">${d?.name || (d?.pc ? '장비' : '공석')}</div><div class="seat-id">${id.split('-').pop()}</div>`;
+      return div;
+    }
+    const render = (c, ids) => ids.forEach(id => { const el = document.getElementById(c); if(el) el.appendChild(createSeat(id)); });
+    render('f11-left', ['11F-1-01', '11F-1-02', '11F-1-03']);
+    render('f11-top', ['11F-2-01', '11F-2-02', '11F-2-03', '11F-2-04', '11F-2-05', '11F-2-06', '11F-2-07', '11F-2-08']);
+    render('f11-bottom', ['11F-3-01', '11F-3-02', '11F-3-03', '11F-3-04', null, '11F-3-05', '11F-3-06', '11F-3-07', null, null, '11F-3-08', '11F-3-09']);
+    render('f10-left', ['10F-07', '10F-04', '10F-08', '10F-05', '10F-09', '10F-06']);
+    render('f10-right', ['10F-01', '10F-02', '10F-03']);
+  </script>
+</body>
+</html>
