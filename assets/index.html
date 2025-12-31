@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Studio 자산 현황판</title>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    :root { --notion-bg: #1f1f1f; --notion-card: #252525; --notion-border: #2f2f2f; --notion-text: #ffffff; --notion-text-gray: #9b9b9b; --accent-blue: #2383e2; --accent-mint: #00ffaa; }
+    body { background: var(--notion-bg); color: var(--notion-text); font-family: 'Pretendard', sans-serif; margin: 0; padding: 30px 0; display: flex; flex-direction: column; align-items: center; width: 100%; }
+    .container { width: 100%; max-width: 600px; }
+    .cat-header { font-size: 11px; font-weight: 700; color: var(--notion-text-gray); text-transform: uppercase; margin: 25px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--notion-border); }
+    .asset-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .asset-card { background: var(--notion-card); border: 1px solid var(--notion-border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .asset-name { font-size: 14px; font-weight: 800; color: #efefef; }
+    .spare-badge { font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: rgba(0, 255, 170, 0.1); color: var(--accent-mint); border: 1px solid rgba(0, 255, 170, 0.2); }
+    .no-spare { background: #1a1a1a; color: #555; border: 1px solid var(--notion-border); }
+    .stat-row { display: flex; align-items: baseline; gap: 4px; }
+    .stat-main { font-size: 18px; font-weight: 800; color: var(--notion-text); }
+    .gauge-container { width: 100%; height: 6px; background: #333; border-radius: 3px; overflow: hidden; display: flex; }
+    .bar-used { background: var(--accent-blue); height: 100%; }
+    .bar-spare { background: var(--accent-mint); height: 100%; opacity: 0.4; }
+  </style>
+</head>
+<body>
+  <div class="container" id="asset-root"></div>
+  <script>
+    const assetData = [
+      { category: '워크스테이션 (PC / Mac)', items: [
+        { name: 'RTX 5090 Windows PC', total: 13, used: 12 },
+        { name: 'RTX 4090 Windows PC', total: 4, used: 1 },
+        { name: 'Mac Pro M2 Ultra', total: 1, used: 1 },
+        { name: 'Mac Studio M4 Max', total: 4, used: 4 },
+        { name: 'MacBook Pro M4 Pro', total: 3, used: 3 },
+        { name: 'MacBook Air M4', total: 1, used: 1 },
+        { name: 'Intel MacBook / Pro', total: 2, used: 2 }
+      ]},
+      { category: '디스플레이 및 기타', items: [
+        { name: 'Studio Display', total: 11, used: 11 },
+        { name: 'LG 27" 4K', total: 27, used: 27 },
+        { name: 'Dell (구형)', total: 1, used: 1 },
+        { name: '외장 SSD', total: 11, used: 11 },
+        { name: '와콤 타블렛', total: 4, used: 4 },
+        { name: '독 (CalDigit/Belkin)', total: 2, used: 2 },
+        { name: '디스플레이링크', total: 2, used: 2 }
+      ] }
+    ];
+    const root = document.getElementById('asset-root');
+    assetData.forEach(cat => {
+      const header = document.createElement('div'); header.className = 'cat-header'; header.innerText = cat.category;
+      root.appendChild(header);
+      const grid = document.createElement('div'); grid.className = 'asset-grid';
+      cat.items.forEach(item => {
+        const spare = item.total - item.used;
+        const card = document.createElement('div'); card.className = 'asset-card';
+        card.innerHTML = `<div class="card-top"><div class="asset-name">${item.name}</div><div class="spare-badge ${spare === 0 ? 'no-spare' : ''}">${spare > 0 ? '여분 ' + spare : '재고없음'}</div></div><div class="stat-row"><span class="stat-main">${item.used}</span><span style="font-size:12px; color:#555">/ ${item.total} 사용중</span></div><div class="gauge-container"><div class="bar-used" style="width: ${(item.used/item.total)*100}%"></div><div class="bar-spare" style="width: ${(spare/item.total)*100}%"></div></div>`;
+        grid.appendChild(card);
+      });
+      root.appendChild(grid);
+    });
+  </script>
+</body>
+</html>
